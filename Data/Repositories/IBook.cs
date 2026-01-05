@@ -1,31 +1,60 @@
-using System.Collections.Generic;
-using Domain.Models;
+// <copyright file="IBook.cs" company="Transilvania University of Brasov">
+// Copyright © 2026 Uscoiu Dorin. All rights reserved.
+// </copyright>
 
 namespace Data.Repositories
 {
+    using System.Collections.Generic;
+    using Domain.Models;
+
     /// <summary>
     /// Repository interface for Book-specific operations.
     /// </summary>
     public interface IBook
     {
         /// <summary>
+        /// Gets all books.
+        /// </summary>
+        IEnumerable<Book> GetAll();
+
+        /// <summary>
+        /// Gets a book by ID.
+        /// </summary>
+        Book GetById(int id);
+
+        /// <summary>
         /// Gets books by author ID.
         /// </summary>
-        IEnumerable<Domain.Models.Book> GetBooksByAuthor(int authorId);
+        IEnumerable<Book> GetBooksByAuthor(int authorId);
 
         /// <summary>
         /// Gets books by domain ID.
         /// </summary>
-        IEnumerable<Domain.Models.Book> GetBooksByDomain(int domainId);
+        IEnumerable<Book> GetBooksByDomain(int domainId);
 
         /// <summary>
         /// Gets books with available copies.
         /// </summary>
-        IEnumerable<Domain.Models.Book> GetAvailableBooks();
+        IEnumerable<Book> GetAvailableBooks();
 
         /// <summary>
         /// Gets books by ISBN.
         /// </summary>
-        Domain.Models.Book GetByISBN(string isbn);
+        Book GetByISBN(string isbn);
+
+        /// <summary>
+        /// Adds a new book.
+        /// </summary>
+        void Add(Book book);
+
+        /// <summary>
+        /// Updates a book.
+        /// </summary>
+        void Update(Book book);
+
+        /// <summary>
+        /// Deletes a book.
+        /// </summary>
+        void Delete(int id);
     }
 }

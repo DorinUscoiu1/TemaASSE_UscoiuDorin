@@ -53,10 +53,16 @@
   <ItemGroup>
     <Compile Include="LibraryDbContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Repositories\AuthorDataService.cs" />
     <Compile Include="Repositories\BookDataService.cs" />
+    <Compile Include="Repositories\BookDomainDataService.cs" />
     <Compile Include="Repositories\BorrowingDataService.cs" />
+    <Compile Include="Repositories\EditionDataService.cs" />
+    <Compile Include="Repositories\IAuthor.cs" />
     <Compile Include="Repositories\IBook.cs" />
+    <Compile Include="Repositories\IBookDomain.cs" />
     <Compile Include="Repositories\IBorrowing.cs" />
+    <Compile Include="Repositories\IEdition.cs" />
     <Compile Include="Repositories\IReader.cs" />
     <Compile Include="Repositories\ReaderDataService.cs" />
   </ItemGroup>

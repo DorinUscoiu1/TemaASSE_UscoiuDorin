@@ -1,9 +1,13 @@
-using System;
-using System.Collections.Generic;
-using Domain.Models;
+// <copyright file="IBorrowing.cs" company="Transilvania University of Brasov">
+// Copyright © 2026 Uscoiu Dorin. All rights reserved.
+// </copyright>
 
 namespace Data.Repositories
 {
+    using System;
+    using System.Collections.Generic;
+    using Domain.Models;
+
     /// <summary>
     /// Repository interface for Borrowing-specific operations.
     /// </summary>
@@ -12,21 +16,36 @@ namespace Data.Repositories
         /// <summary>
         /// Gets active borrowings for a specific reader.
         /// </summary>
-        IEnumerable<Domain.Models.Borrowing> GetActiveBorrowingsByReader(int readerId);
+        IEnumerable<Borrowing> GetActiveBorrowingsByReader(int readerId);
 
         /// <summary>
         /// Gets overdue borrowings.
         /// </summary>
-        IEnumerable<Domain.Models.Borrowing> GetOverdueBorrowings();
+        IEnumerable<Borrowing> GetOverdueBorrowings();
 
         /// <summary>
         /// Gets borrowings by book ID.
         /// </summary>
-        IEnumerable<Domain.Models.Borrowing> GetBorrowingsByBook(int bookId);
+        IEnumerable<Borrowing> GetBorrowingsByBook(int bookId);
 
         /// <summary>
         /// Gets borrowings within a date range.
         /// </summary>
-        IEnumerable<Domain.Models.Borrowing> GetBorrowingsByDateRange(DateTime startDate, DateTime endDate);
+        IEnumerable<Borrowing> GetBorrowingsByDateRange(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Adds a new borrowing.
+        /// </summary>
+        void Add(Borrowing borrowing);
+
+        /// <summary>
+        /// Updates a borrowing.
+        /// </summary>
+        void Update(Borrowing borrowing);
+
+        /// <summary>
+        /// Gets a borrowing by ID.
+        /// </summary>
+        Borrowing GetById(int id);
     }
 }
