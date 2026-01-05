@@ -1,0 +1,302 @@
+using System;
+using System.Data.Entity;
+using System.Data.Entity.ModelConfiguration.Conventions;
+using Domain.Models;
+
+namespace Data
+{
+    /// <summary>
+    /// Entity Framework DbContext for the library management system.
+    /// Configures all entities and their relationships with the database.
+    /// </summary>
+    public class LibraryDbContext : DbContext
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="LibraryDbContext"/> class.
+        /// Uses the connection string named "LibraryConnection" from App.config.
+        /// </summary>
+        public LibraryDbContext() : base("name=LibraryConnection")
+        {
+            this.Configuration.LazyLoadingEnabled = true;
+            this.Configuration.ProxyCreationEnabled = true;
+        }
+
+        /// <summary>
+        /// Gets or sets the Authors DbSet.
+        /// </summary>
+        public DbSet<Author> Authors { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Books DbSet.
+        /// </summary>
+        public DbSet<Book> Books { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Domains DbSet.
+        /// </summary>
+        public DbSet<BookDomain> Domains { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Editions DbSet.
+        /// </summary>
+        public DbSet<Edition> Editions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Readers DbSet.
+        /// </summary>
+        public DbSet<Reader> Readers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Borrowings DbSet.
+        /// </summary>
+        public DbSet<Borrowing> Borrowings { get; set; }
+
+        /// <summary>
+        /// Gets or sets the LibraryConfigurations DbSet.
+        /// </summary>
+        public DbSet<LibraryConfiguration> LibraryConfigurations { get; set; }
+
+        /// <summary>
+        /// Configures the model on context creation.
+        /// </summary>
+        /// <param name="modelBuilder">The model builder.</param>
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Remove the default pluralizing table name convention
+            modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
+
+            // ==================== AUTHOR ====================
+            modelBuilder.Entity<Author>()
+                .HasKey(a => a.Id);
+
+            modelBuilder.Entity<Author>()
+                .Property(a => a.FirstName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<Author>()
+                .Property(a => a.LastName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            // ==================== BOOKDOMAIN ====================
+            modelBuilder.Entity<BookDomain>()
+                .HasKey(d => d.Id);
+
+            modelBuilder.Entity<BookDomain>()
+                .Property(d => d.Name)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<BookDomain>()
+                .Property(d => d.Description)
+                .HasMaxLength(500);
+
+            // Self-referencing: BookDomain <-> BookDomain (Parent/Subdomains)
+            modelBuilder.Entity<BookDomain>()
+                .HasOptional(d => d.ParentDomain)
+                .WithMany(d => d.Subdomains)
+                .HasForeignKey(d => d.ParentDomainId)
+                .WillCascadeOnDelete(false);
+
+            // ==================== BOOK ====================
+            modelBuilder.Entity<Book>()
+                .HasKey(b => b.Id);
+
+            modelBuilder.Entity<Book>()
+                .Property(b => b.Title)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<Book>()
+                .Property(b => b.ISBN)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Book>()
+                .Property(b => b.Description)
+                .HasMaxLength(1000);
+
+            // Many-to-Many: Book <-> Author
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.Authors)
+                .WithMany(a => a.Books)
+                .Map(m =>
+                {
+                    m.ToTable("BookAuthor");
+                    m.MapLeftKey("BookId");
+                    m.MapRightKey("AuthorId");
+                });
+
+            // Many-to-Many: Book <-> BookDomain
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.Domains)
+                .WithMany(d => d.Books)
+                .Map(m =>
+                {
+                    m.ToTable("BookDomain");
+                    m.MapLeftKey("BookId");
+                    m.MapRightKey("DomainId");
+                });
+
+            // One-to-Many: Book -> Edition
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.Editions)
+                .WithRequired(e => e.Book)
+                .HasForeignKey(e => e.BookId)
+                .WillCascadeOnDelete(true);
+
+            // One-to-Many: Book -> Borrowing
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.BorrowingRecords)
+                .WithRequired(br => br.Book)
+                .HasForeignKey(br => br.BookId)
+                .WillCascadeOnDelete(false);
+
+            // ==================== EDITION ====================
+            modelBuilder.Entity<Edition>()
+                .HasKey(e => e.Id);
+
+            modelBuilder.Entity<Edition>()
+                .Property(e => e.Publisher)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<Edition>()
+                .Property(e => e.BookType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            modelBuilder.Entity<Edition>()
+                .Property(e => e.Year)
+                .IsRequired();
+
+            modelBuilder.Entity<Edition>()
+                .Property(e => e.EditionNumber)
+                .IsRequired();
+
+            modelBuilder.Entity<Edition>()
+                .Property(e => e.PageCount)
+                .IsRequired();
+
+            // ==================== READER ====================
+            modelBuilder.Entity<Reader>()
+                .HasKey(r => r.Id);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.FirstName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.LastName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.Address)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.Email)
+                .HasMaxLength(150);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.PhoneNumber)
+                .HasMaxLength(20);
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.IsStaff)
+                .IsRequired();
+
+            modelBuilder.Entity<Reader>()
+                .Property(r => r.RegistrationDate)
+                .IsRequired();
+
+            // One-to-Many: Reader -> Borrowing
+            modelBuilder.Entity<Reader>()
+                .HasMany(r => r.BorrowingRecords)
+                .WithRequired(br => br.Reader)
+                .HasForeignKey(br => br.ReaderId)
+                .WillCascadeOnDelete(false);
+
+            // ==================== BORROWING ====================
+            modelBuilder.Entity<Borrowing>()
+                .HasKey(b => b.Id);
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.BorrowingDate)
+                .IsRequired();
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.DueDate)
+                .IsRequired();
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.IsActive)
+                .IsRequired();
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.InitialBorrowingDays)
+                .IsRequired();
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.TotalExtensionDays)
+                .IsRequired();
+
+            // ==================== LIBRARYCONFIGURATION ====================
+            modelBuilder.Entity<LibraryConfiguration>()
+                .HasKey(lc => lc.Id);
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxDomainsPerBook)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxBooksPerPeriod)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.BorrowingPeriodDays)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxBooksPerRequest)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxBooksPerDomain)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.DomainLimitMonths)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxExtensionDays)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MinDaysBetweenBorrows)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxBooksPerDay)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MaxBooksStaffPerDay)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.MinAvailablePercentage)
+                .IsRequired();
+
+            modelBuilder.Entity<LibraryConfiguration>()
+                .Property(lc => lc.LastUpdated)
+                .IsRequired();
+        }
+    }
+}

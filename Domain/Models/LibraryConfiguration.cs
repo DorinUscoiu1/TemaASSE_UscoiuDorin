@@ -1,0 +1,77 @@
+using System;
+
+namespace Domain.Models
+{
+    /// <summary>
+    /// Represents the library configuration settings.
+    /// Stores all configurable thresholds and limits for the library system.
+    /// </summary>
+    public class LibraryConfiguration
+    {
+        /// <summary>
+        /// Gets or sets the unique identifier for the configuration.
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of domains a book can belong to (DOMENII).
+        /// </summary>
+        public int MaxDomainsPerBook { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of books a reader can borrow in a period (NMC).
+        /// </summary>
+        public int MaxBooksPerPeriod { get; set; }
+
+        /// <summary>
+        /// Gets or sets the period in days for maximum books limit (PER).
+        /// </summary>
+        public int BorrowingPeriodDays { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of books per borrow request (C).
+        /// </summary>
+        public int MaxBooksPerRequest { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of books from the same domain in specified months (D).
+        /// </summary>
+        public int MaxBooksPerDomain { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of months to check for domain limit (L).
+        /// </summary>
+        public int DomainLimitMonths { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum extension limit in days for a book (LIM).
+        /// </summary>
+        public int MaxExtensionDays { get; set; }
+
+        /// <summary>
+        /// Gets or sets the interval in days between consecutive borrows of the same book (DELTA).
+        /// </summary>
+        public int MinDaysBetweenBorrows { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of books a reader can borrow in one day (NCZ).
+        /// </summary>
+        public int MaxBooksPerDay { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum number of books staff can distribute in one day (PERSIMP).
+        /// </summary>
+        public int MaxBooksStaffPerDay { get; set; }
+
+        /// <summary>
+        /// Gets or sets the minimum percentage of available copies required to allow borrowing.
+        /// Default is 0.10 (10%).
+        /// </summary>
+        public decimal MinAvailablePercentage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the last update date of this configuration.
+        /// </summary>
+        public DateTime LastUpdated { get; set; }
+    }
+}
