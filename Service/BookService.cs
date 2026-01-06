@@ -220,52 +220,68 @@ namespace Service
         /// Rule 3: Total copies must be positive
         /// Rule 4: Book must belong to at least one domain
         /// </summary>
-        public void CreateBook(Book book)
+        public void CreateBook(Book book, List<int> domainIds)
         {
-            // Validation 1: Book cannot be null
-            if (book == null)
-            {
-                throw new ArgumentNullException(nameof(book), "Book cannot be null.");
-            }
-
-            // Validation 2: Validate using FluentValidation
-            var validationResult = this.bookValidator.Validate(book);
-            if (!validationResult.IsValid)
-            {
-                var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-                throw new ValidationException(errors);
-            }
-
-            // Validation 3: Book must belong to at least one domain
-            if (book.Domains == null || book.Domains.Count == 0)
-            {
-                throw new ArgumentException("Book must belong to at least one domain.", nameof(book.Domains));
-            }
-
-            // Validation 4: Check for duplicate ISBN
-            if (!string.IsNullOrWhiteSpace(book.ISBN))
-            {
-                var existingBook = this.bookRepository.GetByISBN(book.ISBN);
-                if (existingBook != null)
-                {
-                    throw new InvalidOperationException($"Book with ISBN '{book.ISBN}' already exists.");
-                }
-            }
-
-            // Validation 5: Validate domain constraints
-            if (!this.ValidateBookDomains(book))
-            {
-                throw new InvalidOperationException(
-                    "Book domain constraints violated: exceeds maximum domains or contains ancestor-descendant relationship.");
-            }
+            //this.logger.Information("Se încearc? crearea c?r?ii cu titlul: {Title}", book.Title);
 
             try
             {
+                // 1. Validare model (FluentValidation)
+                var validationResult = this.bookValidator.Validate(book);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                   // this.logger.Warning("Validarea a e?uat pentru cartea {Title}: {Errors}", book.Title, errors);
+                    throw new ValidationException(errors);
+                }
+
+                // 2. Verificare ISBN duplicat
+                var existingBook = this.bookRepository.GetByISBN(book.ISBN);
+                if (existingBook != null)
+                {
+                    throw new InvalidOperationException($"O carte cu ISBN-ul {book.ISBN} exist? deja.");
+                }
+
+                // 3. Verificare limite domenii
+                if (domainIds == null || !domainIds.Any())
+                    throw new ArgumentException("Cartea trebuie s? apar?in? de cel pu?in un domeniu.");
+
+                if (domainIds.Count > this.configRepository.MaxDomainsPerBook)
+                    throw new InvalidOperationException($"S-a dep??it limita maxim? de domenii ({this.configRepository.MaxDomainsPerBook}).");
+
+                // 4. Înc?rcare domenii din DB
+                var domains = new List<BookDomain>();
+                foreach (var id in domainIds)
+                {
+                    var dom = this.bookDomainRepository.GetById(id);
+                    if (dom == null) throw new KeyNotFoundException($"Domeniul cu ID {id} nu a fost g?sit.");
+                    domains.Add(dom);
+                }
+
+                // 5. Validare ierarhie: F?r? str?mo? ?i descendent în acela?i timp
+                for (int i = 0; i < domains.Count; i++)
+                {
+                    for (int j = i + 1; j < domains.Count; j++)
+                    {
+                        if (this.IsAncestor(domains[i].Id, domains[j].Id) ||
+                            this.IsAncestor(domains[j].Id, domains[i].Id))
+                        {
+                            //this.logger.Warning("Conflict ierarhic pentru cartea {Title}", book.Title);
+                            throw new InvalidOperationException("O carte nu poate fi în acela?i timp într-un domeniu p?rinte ?i unul descendent.");
+                        }
+                    }
+                }
+
+                book.Domains = domains;
                 this.bookRepository.Add(book);
+                // SaveChanges este apelat în interiorul repository.Add conform implement?rii tale
+
+                //this.logger.Information("Cartea {Title} a fost creat? cu succes.", book.Title);
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to create book: {ex.Message}", ex);
+                //this.logger.Error(ex, "Eroare la crearea c?r?ii {Title}", book.Title);
+                throw;
             }
         }
 

@@ -74,6 +74,7 @@
     <Compile Include="BookServiceTests.cs" />
     <Compile Include="BorrowingServiceTests.cs" />
     <Compile Include="EditionServiceTests.cs" />
+    <Compile Include="FluentValidationTests.cs" />
     <Compile Include="ReaderServiceTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

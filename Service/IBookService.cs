@@ -41,7 +41,7 @@ namespace Service
         /// Creates a new book with domain validation.
         /// Validates: max DOMENII domains, no ancestor-descendant relationships.
         /// </summary>
-        void CreateBook(Book book);
+        void CreateBook(Book book, List<int> domainIds);
 
         /// <summary>
         /// Updates a book.

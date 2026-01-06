@@ -45,13 +45,7 @@ namespace DomainTests
             Assert.AreEqual(456, edition.PageCount);
             Assert.AreEqual("Hardcover", edition.BookType);
         }
-        [TestMethod]
-        public void Edition_CurrentYear_IsValid()
-        {
-            var edition = new Edition { Year = DateTime.Now.Year };
 
-            Assert.AreEqual(edition.Year, (DateTime.Now.Year));
-        }
         /// <summary>
         /// Test 2: Verifies that an edition can be associated with a book.
         /// </summary>

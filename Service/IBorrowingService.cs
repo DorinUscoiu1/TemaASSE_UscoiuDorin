@@ -17,16 +17,17 @@ namespace Service
         /// Attempts to borrow a book for a reader with all business rule validations.
         /// </summary>
         void BorrowBook(int readerId, int bookId, int borrowingDays);
+        void CreateBorrowings(int readerId, List<int> bookIds, DateTime borrowingDate, int daysToBorrow);
 
         /// <summary>
         /// Returns a borrowed book.
         /// </summary>
-        void ReturnBook(int borrowingId);
+        void ReturnBorrowing(int borrowingId, DateTime returnDate);
 
         /// <summary>
         /// Extends a borrowing period if allowed.
         /// </summary>
-        void ExtendBorrowing(int borrowingId, int extensionDays);
+        void ExtendBorrowing(int borrowingId, int extensionDays, DateTime extensionDate);
 
         /// <summary>
         /// Gets all active borrowings for a reader.
