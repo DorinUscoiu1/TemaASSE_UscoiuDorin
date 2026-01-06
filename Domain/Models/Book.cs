@@ -18,17 +18,17 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the title of the book.
         /// </summary>
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the description of the book.
         /// </summary>
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the ISBN of the book.
         /// </summary>
-        public string ISBN { get; set; }
+        public string ISBN { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the total number of copies.
@@ -64,6 +64,22 @@ namespace Domain.Models
         {
             var loanedCopies = this.BorrowingRecords.Count(l => l.ReturnDate == null);
             return this.TotalCopies - this.ReadingRoomOnlyCopies - loanedCopies;
+        }
+
+        /// <summary>
+        /// Checks if the book can be loaned.
+        /// </summary>
+        /// <returns>True if book can be loaned.</returns>
+        public bool CanBeLoanable()
+        {
+            if (this.TotalCopies == this.ReadingRoomOnlyCopies)
+            {
+                return false;
+            }
+
+            var loanableCopies = this.TotalCopies - this.ReadingRoomOnlyCopies;
+            var available = this.GetAvailableCopies();
+            return available >= (loanableCopies * 0.1);
         }
     }
 }

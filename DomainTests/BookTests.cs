@@ -22,7 +22,24 @@ namespace DomainTests
         {
             book = new Book();
         }
+        [TestMethod]
+        public void Book_Creation_ShouldSetProperties()
+        {
+            var book = new Book
+            {
+                Id = 1,
+                Title = "Test Book",
+                ISBN = "1234567890",
+                TotalCopies = 10,
+                ReadingRoomOnlyCopies = 2,
+            };
 
+            Assert.AreEqual(book.Id, 1);
+            Assert.AreEqual(book.Title,"Test Book");
+            Assert.AreEqual(book.ISBN,"1234567890");
+            Assert.AreEqual(book.TotalCopies, 10);
+            Assert.AreEqual(book.ReadingRoomOnlyCopies, 2);
+        }
         /// <summary>
         /// Test 1: Verifies that GetAvailableCopies calculates the correct number of available copies.
         /// Available = TotalCopies - ReadingRoomOnlyCopies - LoanedCopies
@@ -48,7 +65,6 @@ namespace DomainTests
             int availableCopies = book.GetAvailableCopies();
 
             // Assert
-            // Available = 10 - 2 - 2 = 6
             Assert.AreEqual(6, availableCopies);
         }
 
@@ -102,7 +118,6 @@ namespace DomainTests
             int availableCopies = book.GetAvailableCopies();
 
             // Assert
-            // Available = 5 - 2 - 3 = 0
             Assert.AreEqual(0, availableCopies);
         }
 
@@ -128,6 +143,149 @@ namespace DomainTests
             Assert.IsTrue(book.Editions.All(e => e.BookId == book.Id));
             Assert.IsTrue(book.Editions.Any(e => e.Year == 2020));
             Assert.IsTrue(book.Editions.Any(e => e.Year == 2022));
+        }
+
+        /// <summary>
+        /// Test 5: Verifies CanBeLoanable returns false when all copies are reading-room-only.
+        /// </summary>
+        [TestMethod]
+        public void Book_CanBeLoanable_ReturnsFalseWhenAllReadingRoomOnly()
+        {
+            // Arrange
+            book.TotalCopies = 5;
+            book.ReadingRoomOnlyCopies = 5;
+
+            // Act
+            bool canBeLoanable = book.CanBeLoanable();
+
+            // Assert
+            Assert.IsFalse(canBeLoanable);
+        }
+
+        /// <summary>
+        /// Test 6: Verifies CanBeLoanable returns true when sufficient loanable copies exist.
+        /// </summary>
+        [TestMethod]
+        public void Book_CanBeLoanable_ReturnsTrueWhenLoanableCopiesAvailable()
+        {
+            // Arrange
+            book.TotalCopies = 10;
+            book.ReadingRoomOnlyCopies = 2;
+            // Loanable copies = 8, available = 8
+            // Available (8) >= loanable (8) * 0.1 = 0.8, so true
+
+            // Act
+            bool canBeLoanable = book.CanBeLoanable();
+
+            // Assert
+            Assert.IsTrue(canBeLoanable);
+        }
+
+        /// <summary>
+        /// Test 7: Verifies CanBeLoanable returns false when available copies drop below 10% of loanable.
+        /// </summary>
+        [TestMethod]
+        public void Book_CanBeLoanable_ReturnsFalseWhenBelowThreshold()
+        {
+            // Arrange
+            book.TotalCopies = 10;
+            book.ReadingRoomOnlyCopies = 1;
+            // Loanable copies = 9, threshold = 0.9
+            // Add 9 borrowings, so available = 0, which is less than 0.9
+            for (int i = 1; i <= 9; i++)
+            {
+                book.BorrowingRecords.Add(new Borrowing { Id = i, ReturnDate = null });
+            }
+
+            // Act
+            bool canBeLoanable = book.CanBeLoanable();
+
+            // Assert
+            Assert.IsFalse(canBeLoanable);
+        }
+
+        /// <summary>
+        /// Test 8: Verifies GetAvailableCopies with no borrowings.
+        /// </summary>
+        [TestMethod]
+        public void Book_GetAvailableCopies_WithNoBorrowings_ReturnsCorrectValue()
+        {
+            // Arrange
+            book.TotalCopies = 10;
+            book.ReadingRoomOnlyCopies = 3;
+
+            // Act
+            int availableCopies = book.GetAvailableCopies();
+
+            // Assert
+            // Available = 10 - 3 - 0 = 7
+            Assert.AreEqual(7, availableCopies);
+        }
+
+        /// <summary>
+        /// Test 9: Verifies default book initialization.
+        /// </summary>
+        [TestMethod]
+        public void Book_DefaultInitialization_HasCorrectDefaults()
+        {
+            // Arrange & Act
+            var newBook = new Book();
+
+            // Assert
+            Assert.AreEqual(0, newBook.Id);
+            Assert.AreEqual(string.Empty, newBook.Title);
+            Assert.AreEqual(string.Empty, newBook.Description);
+            Assert.AreEqual(string.Empty, newBook.ISBN);
+            Assert.AreEqual(0, newBook.TotalCopies);
+            Assert.AreEqual(0, newBook.ReadingRoomOnlyCopies);
+            Assert.IsNotNull(newBook.Authors);
+            Assert.IsNotNull(newBook.Domains);
+            Assert.IsNotNull(newBook.Editions);
+            Assert.IsNotNull(newBook.BorrowingRecords);
+        }
+        /// <summary>
+        /// Test with single copy.
+        /// </summary>
+        [TestMethod]
+        public void CanBeLoanable_SingleCopy_ReturnsTrue()
+        {
+            var book = new Book
+            {
+                TotalCopies = 1,
+                ReadingRoomOnlyCopies = 0,
+            };
+
+            Assert.AreEqual(book.CanBeLoanable(), true);
+        }
+        /// <summary>
+        /// Test with returned loans.
+        /// </summary>
+        [TestMethod]
+        public void GetAvailableCopies_ReturnedLoans_NotCounted()
+        {
+            var book = new Book
+            {
+                TotalCopies = 10,
+                ReadingRoomOnlyCopies = 0,
+                BorrowingRecords = new List<Borrowing>
+                {
+                    new Borrowing { ReturnDate = DateTime.Now.AddDays(-1) },
+                    new Borrowing { ReturnDate = DateTime.Now.AddDays(-2) },
+                },
+            };
+
+            Assert.AreEqual(book.GetAvailableCopies(), 10);
+        }
+
+        /// <summary>
+        /// Test ISBN length valid.
+        /// </summary>
+        [TestMethod]
+        public void Book_ISBN10_IsValid()
+        {
+            var book = new Book { ISBN = "1234567890" };
+
+            Assert.IsTrue(book.ISBN.Length>=6 && book.ISBN.Length <=17);
         }
     }
 }

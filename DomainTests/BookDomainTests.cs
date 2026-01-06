@@ -46,6 +46,18 @@ namespace DomainTests
         }
 
         /// <summary>
+        /// Test child is not ancestor of parent.
+        /// </summary>
+        [TestMethod]
+        public void IsAncestorOf_ChildToParent_ReturnsFalse()
+        {
+            var parent = new BookDomain { Id = 1, Name = "Science" };
+            var child = new BookDomain { Id = 2, Name = "Computer Science", ParentDomain = parent };
+
+            Assert.AreEqual(child.IsAncestorOf(parent), false);
+        }
+
+        /// <summary>
         /// Test 2: Verifies that books can be added to a domain and retrieved correctly.
         /// </summary>
         [TestMethod]
@@ -106,6 +118,99 @@ namespace DomainTests
             // Assert
             Assert.AreEqual(3, parentDomain.Subdomains.Count);
             Assert.IsTrue(parentDomain.Subdomains.All(s => s.ParentDomainId == 1));
+        }
+
+        /// <summary>
+        /// Test 5: Verifies that GetAncestors returns complete ancestor chain.
+        /// </summary>
+        [TestMethod]
+        public void BookDomain_GetAncestors_ReturnsCompleteChain()
+        {
+            // Arrange
+            var root = new BookDomain { Id = 1, Name = "Root" };
+            var middle = new BookDomain { Id = 2, Name = "Middle", ParentDomain = root, ParentDomainId = 1 };
+            var leaf = new BookDomain { Id = 3, Name = "Leaf", ParentDomain = middle, ParentDomainId = 2 };
+
+            // Act
+            var ancestors = leaf.GetAncestors();
+
+            // Assert
+            Assert.AreEqual(3, ancestors.Count);
+            Assert.AreEqual(leaf.Id, ancestors[0].Id);
+            Assert.AreEqual(middle.Id, ancestors[1].Id);
+            Assert.AreEqual(root.Id, ancestors[2].Id);
+        }
+
+        /// <summary>
+        /// Test 6: Verifies that IsAncestorOf returns true when domain is ancestor.
+        /// </summary>
+        [TestMethod]
+        public void BookDomain_IsAncestorOf_ReturnsTrueWhenAncestor()
+        {
+            // Arrange
+            var root = new BookDomain { Id = 1, Name = "Root" };
+            var middle = new BookDomain { Id = 2, Name = "Middle", ParentDomain = root, ParentDomainId = 1 };
+            var leaf = new BookDomain { Id = 3, Name = "Leaf", ParentDomain = middle, ParentDomainId = 2 };
+
+            // Act
+            bool isAncestor = root.IsAncestorOf(leaf);
+
+            // Assert
+            Assert.IsTrue(isAncestor);
+        }
+
+        /// <summary>
+        /// Test 7: Verifies that IsAncestorOf returns false when not ancestor.
+        /// </summary>
+        [TestMethod]
+        public void BookDomain_IsAncestorOf_ReturnsFalseWhenNotAncestor()
+        {
+            // Arrange
+            var domain1 = new BookDomain { Id = 1, Name = "Domain1" };
+            var domain2 = new BookDomain { Id = 2, Name = "Domain2" };
+
+            // Act
+            bool isAncestor = domain1.IsAncestorOf(domain2);
+
+            // Assert
+            Assert.IsFalse(isAncestor);
+        }
+
+        /// <summary>
+        /// Test 8: Verifies that GetAncestors on root returns only root.
+        /// </summary>
+        [TestMethod]
+        public void BookDomain_GetAncestors_RootReturnsOnlyItself()
+        {
+            // Arrange
+            var root = new BookDomain { Id = 1, Name = "Root" };
+
+            // Act
+            var ancestors = root.GetAncestors();
+
+            // Assert
+            Assert.AreEqual(1, ancestors.Count);
+            Assert.AreEqual(root.Id, ancestors[0].Id);
+        }
+
+        /// <summary>
+        /// Test 9: Verifies default domain initialization.
+        /// </summary>
+        [TestMethod]
+        public void BookDomain_DefaultInitialization_HasCorrectDefaults()
+        {
+            // Arrange & Act
+            var newDomain = new BookDomain();
+
+            // Assert
+            Assert.AreEqual(0, newDomain.Id);
+            Assert.AreEqual(string.Empty, newDomain.Name);
+            Assert.IsNull(newDomain.ParentDomainId);
+            Assert.IsNull(newDomain.ParentDomain);
+            Assert.IsNotNull(newDomain.Subdomains);
+            Assert.IsNotNull(newDomain.Books);
+            Assert.AreEqual(0, newDomain.Subdomains.Count);
+            Assert.AreEqual(0, newDomain.Books.Count);
         }
     }
 }

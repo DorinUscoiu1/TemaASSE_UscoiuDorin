@@ -17,12 +17,8 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the name of the domain.
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Gets or sets the description of the domain.
-        /// </summary>
-        public string Description { get; set; }
 
         /// <summary>
         /// Gets or sets the ID of the parent domain (null if this is a root domain).
@@ -43,5 +39,43 @@ namespace Domain.Models
         /// Gets or sets the collection of books in this domain.
         /// </summary>
         public virtual ICollection<Book> Books { get; set; } = new List<Book>();
+
+        /// <summary>
+        /// Gets all ancestor domains including this one.
+        /// </summary>
+        /// <returns>List of ancestor domains.</returns>
+        public List<BookDomain> GetAncestors()
+        {
+            var ancestors = new List<BookDomain> { this };
+            var current = this.ParentDomain;
+            while (current != null)
+            {
+                ancestors.Add(current);
+                current = current.ParentDomain;
+            }
+
+            return ancestors;
+        }
+
+        /// <summary>
+        /// Checks if this domain is an ancestor of another domain.
+        /// </summary>
+        /// <param name="other">The other domain.</param>
+        /// <returns>True if this is an ancestor of other.</returns>
+        public bool IsAncestorOf(BookDomain other)
+        {
+            var current = other.ParentDomain;
+            while (current != null)
+            {
+                if (current.Id == this.Id)
+                {
+                    return true;
+                }
+
+                current = current.ParentDomain;
+            }
+
+            return false;
+        }
     }
 }

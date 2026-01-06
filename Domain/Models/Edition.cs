@@ -21,12 +21,12 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the book.
         /// </summary>
-        public Book Book { get; set; }
+        public Book Book { get; set; }= null;
 
         /// <summary>
         /// Gets or sets the publisher name.
         /// </summary>
-        public string Publisher { get; set; }
+        public string Publisher { get; set; }= string.Empty;
 
         /// <summary>
         /// Gets or sets the publication year.
@@ -46,6 +46,6 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the book type (e.g., hardcover, paperback).
         /// </summary>
-        public string BookType { get; set; }
+        public string BookType { get; set; }= string.Empty;
     }
 }

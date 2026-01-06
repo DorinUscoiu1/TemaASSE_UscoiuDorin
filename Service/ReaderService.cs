@@ -6,9 +6,10 @@ namespace Service
 {
     using System;
     using System.Collections.Generic;
-    using System.Net.Mail;
     using Data.Repositories;
+    using Data.Validators;
     using Domain.Models;
+    using FluentValidation;
 
     /// <summary>
     /// Service implementation for reader operations with validation.
@@ -17,6 +18,7 @@ namespace Service
     public class ReaderService : IReaderService
     {
         private readonly IReader readerRepository;
+        private readonly IValidator<Reader> readerValidator;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ReaderService"/> class.
@@ -24,7 +26,8 @@ namespace Service
         /// <param name="readerRepository">The reader repository.</param>
         public ReaderService(IReader readerRepository)
         {
-            this.readerRepository = readerRepository;
+            this.readerRepository = readerRepository ?? throw new ArgumentNullException(nameof(readerRepository));
+            this.readerValidator = new ReaderValidator();
         }
 
         /// <summary>
@@ -72,9 +75,12 @@ namespace Service
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            if (!this.ValidateReader(reader))
+            // Validate using FluentValidation
+            var validationResult = this.readerValidator.Validate(reader);
+            if (!validationResult.IsValid)
             {
-                throw new InvalidOperationException("Reader validation failed.");
+                var errors = string.Join(", ", validationResult.Errors);
+                throw new ValidationException(errors);
             }
 
             reader.RegistrationDate = DateTime.Now;
@@ -91,9 +97,12 @@ namespace Service
                 throw new ArgumentNullException(nameof(reader));
             }
 
-            if (!this.ValidateReader(reader))
+            // Validate using FluentValidation
+            var validationResult = this.readerValidator.Validate(reader);
+            if (!validationResult.IsValid)
             {
-                throw new InvalidOperationException("Reader validation failed.");
+                var errors = string.Join(", ", validationResult.Errors);
+                throw new ValidationException(errors);
             }
 
             this.readerRepository.Update(reader);
@@ -112,45 +121,21 @@ namespace Service
         /// </summary>
         public bool ValidateReader(Reader reader)
         {
-            if (string.IsNullOrWhiteSpace(reader.FirstName) || string.IsNullOrWhiteSpace(reader.LastName))
+            if (reader == null)
             {
                 return false;
             }
 
-            var hasPhone = !string.IsNullOrWhiteSpace(reader.PhoneNumber);
-            var hasEmail = !string.IsNullOrWhiteSpace(reader.Email);
-            if (!hasPhone && !hasEmail)
-            {
-                return false;
-            }
-
-            if (string.IsNullOrWhiteSpace(reader.Address))
-            {
-                return false;
-            }
-
-            if (hasEmail && !this.IsValidEmail(reader.Email))
-            {
-                return false;
-            }
-
-            return true;
+            var validationResult = this.readerValidator.Validate(reader);
+            return validationResult.IsValid;
         }
 
         /// <summary>
-        /// Simple email validation.
+        /// Gets staff readers.
         /// </summary>
-        private bool IsValidEmail(string email)
+        public IEnumerable<Reader> GetStaffReaders()
         {
-            try
-            {
-                var addr = new MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
+            return this.readerRepository.GetStaffMembers();
         }
     }
 }

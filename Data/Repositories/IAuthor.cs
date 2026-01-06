@@ -23,6 +23,11 @@ namespace Data.Repositories
         Author GetById(int id);
 
         /// <summary>
+        /// Gets authors by first name.
+        /// </summary>
+        IEnumerable<Author> GetByFirstName(string firstName);
+
+        /// <summary>
         /// Gets authors by last name.
         /// </summary>
         IEnumerable<Author> GetByLastName(string lastName);

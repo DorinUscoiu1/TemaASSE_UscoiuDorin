@@ -52,9 +52,9 @@ namespace Data
         public DbSet<Borrowing> Borrowings { get; set; }
 
         /// <summary>
-        /// Gets or sets the LibraryConfigurations DbSet.
+        /// Gets or sets the LoanExtensions DbSet.
         /// </summary>
-        public DbSet<LibraryConfiguration> LibraryConfigurations { get; set; }
+        public DbSet<LoanExtension> LoanExtensions { get; set; }
 
         /// <summary>
         /// Configures the model on context creation.
@@ -90,16 +90,23 @@ namespace Data
                 .IsRequired()
                 .HasMaxLength(150);
 
-            modelBuilder.Entity<BookDomain>()
-                .Property(d => d.Description)
-                .HasMaxLength(500);
-
             // Self-referencing: BookDomain <-> BookDomain (Parent/Subdomains)
             modelBuilder.Entity<BookDomain>()
                 .HasOptional(d => d.ParentDomain)
                 .WithMany(d => d.Subdomains)
                 .HasForeignKey(d => d.ParentDomainId)
                 .WillCascadeOnDelete(false);
+
+            // Many-to-Many: Book <-> BookDomain
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.Domains)
+                .WithMany(d => d.Books)
+                .Map(m =>
+                {
+                    m.ToTable("BookBookDomain");
+                    m.MapLeftKey("BookId");
+                    m.MapRightKey("DomainId");
+                });
 
             // ==================== BOOK ====================
             modelBuilder.Entity<Book>()
@@ -127,17 +134,6 @@ namespace Data
                     m.ToTable("BookAuthor");
                     m.MapLeftKey("BookId");
                     m.MapRightKey("AuthorId");
-                });
-
-            // Many-to-Many: Book <-> BookDomain
-            modelBuilder.Entity<Book>()
-                .HasMany(b => b.Domains)
-                .WithMany(d => d.Books)
-                .Map(m =>
-                {
-                    m.ToTable("BookDomain");
-                    m.MapLeftKey("BookId");
-                    m.MapRightKey("DomainId");
                 });
 
             // One-to-Many: Book -> Edition
@@ -228,11 +224,18 @@ namespace Data
 
             modelBuilder.Entity<Borrowing>()
                 .Property(b => b.BorrowingDate)
+                .HasColumnType("datetime2")
                 .IsRequired();
 
             modelBuilder.Entity<Borrowing>()
                 .Property(b => b.DueDate)
+                .HasColumnType("datetime2")
                 .IsRequired();
+
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.ReturnDate)
+                .HasColumnType("datetime2")
+                .IsOptional();
 
             modelBuilder.Entity<Borrowing>()
                 .Property(b => b.IsActive)
@@ -246,56 +249,32 @@ namespace Data
                 .Property(b => b.TotalExtensionDays)
                 .IsRequired();
 
-            // ==================== LIBRARYCONFIGURATION ====================
-            modelBuilder.Entity<LibraryConfiguration>()
-                .HasKey(lc => lc.Id);
+            modelBuilder.Entity<Borrowing>()
+                .Property(b => b.LastExtensionDate)
+                .HasColumnType("datetime2")
+                .IsOptional();
 
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxDomainsPerBook)
+            // One-to-Many: Borrowing -> LoanExtension
+            modelBuilder.Entity<Borrowing>()
+                .HasMany(b => b.Extensions)
+                .WithRequired(le => le.Borrowing)
+                .HasForeignKey(le => le.BorrowingId)
+                .WillCascadeOnDelete(true);
+
+            // ==================== LOANEXTENSION ====================
+            modelBuilder.Entity<LoanExtension>()
+                .HasKey(le => le.Id);
+
+            modelBuilder.Entity<LoanExtension>()
+                .Property(le => le.BorrowingId)
                 .IsRequired();
 
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxBooksPerPeriod)
+            modelBuilder.Entity<LoanExtension>()
+                .Property(le => le.ExtensionDate)
                 .IsRequired();
 
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.BorrowingPeriodDays)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxBooksPerRequest)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxBooksPerDomain)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.DomainLimitMonths)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxExtensionDays)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MinDaysBetweenBorrows)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxBooksPerDay)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MaxBooksStaffPerDay)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.MinAvailablePercentage)
-                .IsRequired();
-
-            modelBuilder.Entity<LibraryConfiguration>()
-                .Property(lc => lc.LastUpdated)
+            modelBuilder.Entity<LoanExtension>()
+                .Property(le => le.ExtensionDays)
                 .IsRequired();
         }
     }

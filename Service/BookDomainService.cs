@@ -69,9 +69,12 @@ namespace Service
                 throw new ArgumentNullException(nameof(domain));
             }
 
-            if (string.IsNullOrWhiteSpace(domain.Name))
+            // Normalize input: trim and handle null safely
+            domain.Name = domain.Name?.Trim();
+
+            if (string.IsNullOrEmpty(domain.Name))
             {
-                throw new ArgumentException("Domain name is required.");
+                throw new ArgumentException("Domain name is required and cannot be empty or whitespace.", nameof(domain.Name));
             }
 
             if (domain.ParentDomainId.HasValue)

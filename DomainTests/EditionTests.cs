@@ -1,5 +1,5 @@
 ﻿using Domain.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace DomainTests
@@ -22,93 +22,99 @@ namespace DomainTests
         }
 
         /// <summary>
-        /// Test 1: Verifies that an edition can be created with all required properties.
+        /// Test 1: Verifies that an edition can be created with complete information.
         /// </summary>
         [TestMethod]
-        public void Edition_CreateWithAllProperties_StoresCorrectly()
+        public void Edition_CreateWithCompleteInfo_StoresCorrectly()
         {
             // Arrange & Act
             edition.Id = 1;
-            edition.BookId = 1;
-            edition.Publisher = "O'Reilly Media";
-            edition.Year = 2023;
+            edition.BookId = 5;
+            edition.Publisher = "O'Reilly";
+            edition.Year = 2022;
             edition.EditionNumber = 3;
             edition.PageCount = 456;
             edition.BookType = "Hardcover";
 
             // Assert
             Assert.AreEqual(1, edition.Id);
-            Assert.AreEqual(1, edition.BookId);
-            Assert.AreEqual("O'Reilly Media", edition.Publisher);
-            Assert.AreEqual(2023, edition.Year);
+            Assert.AreEqual(5, edition.BookId);
+            Assert.AreEqual("O'Reilly", edition.Publisher);
+            Assert.AreEqual(2022, edition.Year);
             Assert.AreEqual(3, edition.EditionNumber);
             Assert.AreEqual(456, edition.PageCount);
             Assert.AreEqual("Hardcover", edition.BookType);
         }
-
-        /// <summary>
-        /// Test 2: Verifies that different book types can be assigned to editions.
-        /// </summary>
         [TestMethod]
-        public void Edition_DifferentBookTypes_AreStoredCorrectly()
+        public void Edition_CurrentYear_IsValid()
         {
-            // Arrange
-            var hardcoverEdition = new Edition { Id = 1, BookType = "Hardcover" };
-            var paperbackEdition = new Edition { Id = 2, BookType = "Paperback" };
-            var ebookEdition = new Edition { Id = 3, BookType = "E-book" };
+            var edition = new Edition { Year = DateTime.Now.Year };
 
-            // Act & Assert
-            Assert.AreEqual("Hardcover", hardcoverEdition.BookType);
-            Assert.AreEqual("Paperback", paperbackEdition.BookType);
-            Assert.AreEqual("E-book", ebookEdition.BookType);
+            Assert.AreEqual(edition.Year, (DateTime.Now.Year));
         }
-
         /// <summary>
-        /// Test 3: Verifies that multiple editions of the same book have different years and numbers.
+        /// Test 2: Verifies that an edition can be associated with a book.
         /// </summary>
         [TestMethod]
-        public void Edition_MultipleEditions_HaveDifferentYearsAndNumbers()
+        public void Edition_WithBook_MaintainsRelationship()
         {
             // Arrange
-            var edition1 = new Edition { Id = 1, BookId = 1, Year = 2019, EditionNumber = 1 };
-            var edition2 = new Edition { Id = 2, BookId = 1, Year = 2021, EditionNumber = 2 };
-            var edition3 = new Edition { Id = 3, BookId = 1, Year = 2023, EditionNumber = 3 };
-
-            // Act & Assert
-            Assert.AreEqual(1, edition1.BookId);
-            Assert.AreEqual(1, edition2.BookId);
-            Assert.AreEqual(1, edition3.BookId);
-
-            Assert.AreEqual(2019, edition1.Year);
-            Assert.AreEqual(2021, edition2.Year);
-            Assert.AreEqual(2023, edition3.Year);
-
-            Assert.AreEqual(1, edition1.EditionNumber);
-            Assert.AreEqual(2, edition2.EditionNumber);
-            Assert.AreEqual(3, edition3.EditionNumber);
-        }
-
-        /// <summary>
-        /// Test 4: Verifies that an edition maintains correct relationship with a book.
-        /// </summary>
-        [TestMethod]
-        public void Edition_WithBook_MaintainsCorrectRelationship()
-        {
-            // Arrange
-            var book = new Book { Id = 1, Title = "Programming Concepts" };
-
-            // Act
-            edition.Id = 1;
-            edition.BookId = book.Id;
+            var book = new Book { Id = 1, Title = "Programming in C#" };
             edition.Book = book;
-            edition.Publisher = "Tech Press";
-            edition.Year = 2022;
+            edition.BookId = book.Id;
+
+            // Act & Assert
+            Assert.IsNotNull(edition.Book);
+            Assert.AreEqual(book.Id, edition.BookId);
+            Assert.AreEqual("Programming in C#", edition.Book.Title);
+        }
+
+        /// <summary>
+        /// Test 3: Verifies default edition initialization.
+        /// </summary>
+        [TestMethod]
+        public void Edition_DefaultInitialization_HasCorrectDefaults()
+        {
+            // Arrange & Act
+            var newEdition = new Edition();
 
             // Assert
-            Assert.AreEqual(book.Id, edition.BookId);
-            Assert.IsNotNull(edition.Book);
-            Assert.AreEqual("Programming Concepts", edition.Book.Title);
-            Assert.AreEqual("Tech Press", edition.Publisher);
+            Assert.AreEqual(0, newEdition.Id);
+            Assert.AreEqual(0, newEdition.BookId);
+            Assert.IsNull(newEdition.Book);
+            Assert.AreEqual(string.Empty, newEdition.Publisher);
+            Assert.AreEqual(0, newEdition.Year);
+            Assert.AreEqual(0, newEdition.EditionNumber);
+            Assert.AreEqual(0, newEdition.PageCount);
+            Assert.AreEqual(string.Empty, newEdition.BookType);
+        }
+
+        /// <summary>
+        /// Test 4: Verifies that multiple editions can have different publishers and years.
+        /// </summary>
+        [TestMethod]
+        public void Edition_MultipleEditions_StoreDistinctValues()
+        {
+            // Arrange
+            var edition1 = new Edition { Id = 1, Publisher = "Packt", Year = 2020, EditionNumber = 1, PageCount = 400 };
+            var edition2 = new Edition { Id = 2, Publisher = "Microsoft Press", Year = 2023, EditionNumber = 2, PageCount = 550 };
+
+            // Act & Assert
+            Assert.AreNotEqual(edition1.Publisher, edition2.Publisher);
+            Assert.AreNotEqual(edition1.Year, edition2.Year);
+            Assert.AreNotEqual(edition1.PageCount, edition2.PageCount);
+        }
+
+        /// <summary>
+        /// Test book reference.
+        /// </summary>
+        [TestMethod]
+        public void Edition_BookReference_CanBeSet()
+        {
+            var book = new Book { Id = 1 };
+            var edition = new Edition { BookId = 1, Book = book };
+
+            Assert.AreEqual(edition.Book, book);
         }
     }
 }

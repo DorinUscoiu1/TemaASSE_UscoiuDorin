@@ -22,7 +22,7 @@ namespace Data.Repositories
         /// <param name="context">The library database context.</param>
         public AuthorDataService(LibraryDbContext context)
         {
-            this.context = context;
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         /// <summary>
@@ -39,6 +39,21 @@ namespace Data.Repositories
         public Author GetById(int id)
         {
             return this.context.Authors.Find(id);
+        }
+
+        /// <summary>
+        /// Gets authors by first name.
+        /// </summary>
+        public IEnumerable<Author> GetByFirstName(string firstName)
+        {
+            if (string.IsNullOrWhiteSpace(firstName))
+            {
+                return new List<Author>();
+            }
+
+            return this.context.Authors
+                .Where(a => a.FirstName.Contains(firstName))
+                .ToList();
         }
 
         /// <summary>
@@ -96,5 +111,7 @@ namespace Data.Repositories
                 this.context.SaveChanges();
             }
         }
+
+        
     }
 }

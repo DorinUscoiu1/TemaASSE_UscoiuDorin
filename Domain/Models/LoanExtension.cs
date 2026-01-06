@@ -21,7 +21,7 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the loan.
         /// </summary>
-        public Borrowing Borrowing { get; set; }
+        public Borrowing Borrowing { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the extension date.

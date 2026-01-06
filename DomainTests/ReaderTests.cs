@@ -104,5 +104,58 @@ namespace DomainTests
             Assert.AreEqual(6, reader.RegistrationDate.Month);
             Assert.AreEqual(15, reader.RegistrationDate.Day);
         }
+
+        /// <summary>
+        /// Test 5: Verifies that GetFullName returns correct formatted name.
+        /// </summary>
+        [TestMethod]
+        public void Reader_GetFullName_ReturnsCorrectFormat()
+        {
+            // Arrange
+            reader.FirstName = "John";
+            reader.LastName = "Doe";
+
+            // Act
+            string fullName = reader.GetFullName();
+
+            // Assert
+            Assert.AreEqual("John Doe", fullName);
+        }
+
+        /// <summary>
+        /// Test 6: Verifies that GetFullName handles empty names.
+        /// </summary>
+        [TestMethod]
+        public void Reader_GetFullName_WithEmptyNames_ReturnsEmptyResult()
+        {
+            // Arrange
+            reader.FirstName = string.Empty;
+            reader.LastName = string.Empty;
+
+            // Act
+            string fullName = reader.GetFullName();
+
+            // Assert
+            Assert.AreEqual(" ", fullName);
+        }
+
+        /// <summary>
+        /// Test 7: Verifies default property initialization.
+        /// </summary>
+        [TestMethod]
+        public void Reader_DefaultInitialization_HasEmptyCollections()
+        {
+            // Arrange & Act
+            var newReader = new Reader();
+
+            // Assert
+            Assert.IsNotNull(newReader.BorrowingRecords);
+            Assert.AreEqual(0, newReader.BorrowingRecords.Count);
+            Assert.AreEqual(string.Empty, newReader.FirstName);
+            Assert.AreEqual(string.Empty, newReader.LastName);
+            Assert.AreEqual(string.Empty, newReader.Address);
+            Assert.AreEqual(string.Empty, newReader.PhoneNumber);
+            Assert.AreEqual(string.Empty, newReader.Email);
+        }
     }
 }

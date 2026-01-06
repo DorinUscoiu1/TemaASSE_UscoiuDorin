@@ -62,6 +62,27 @@ namespace Service
             {
                 throw new InvalidOperationException("Reader cannot borrow this book. Business rules violated.");
             }
+
+            // Create and persist borrowing record
+            var borrowing = new Borrowing
+            {
+                ReaderId = readerId,
+                BookId = bookId,
+                BorrowingDate = DateTime.Now,
+                DueDate = DateTime.Now.AddDays(borrowingDays),
+                IsActive = true,
+                InitialBorrowingDays = borrowingDays,
+                TotalExtensionDays = 0
+            };
+
+            try
+            {
+                this.borrowingRepository.Add(borrowing);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Failed to create borrowing record: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -85,7 +106,7 @@ namespace Service
         /// </summary>
         public void ExtendBorrowing(int borrowingId, int extensionDays)
         {
-            var borrowing = new Borrowing { Id = borrowingId };
+            var borrowing = this.borrowingRepository.GetById(borrowingId);
             if (borrowing == null)
             {
                 throw new InvalidOperationException("Borrowing record not found.");
@@ -137,7 +158,7 @@ namespace Service
                 return false;
             }
 
-            var availablePercentage = (decimal)book.GetAvailableCopies() / book.TotalCopies;
+            var availablePercentage = (double)book.GetAvailableCopies() / book.TotalCopies;
             if (availablePercentage < config.MinAvailablePercentage)
             {
                 return false;
@@ -200,6 +221,180 @@ namespace Service
         public int GetActiveBorrowingCount(int readerId)
         {
             return this.borrowingRepository.GetActiveBorrowingsByReader(readerId).Count();
+        }
+
+        /// <summary>
+        /// Creates borrowing records for multiple books with comprehensive validation.
+        /// Validates: max books per request, domain diversity (3+ books from 2+ domains),
+        /// daily limits, period limits, and all individual book constraints.
+        /// </summary>
+        public void CreateBorrowings(int readerId, List<int> bookIds, int borrowingDays)
+        {
+            var reader = this.readerRepository.GetById(readerId);
+            if (reader == null)
+            {
+                throw new InvalidOperationException("Reader not found.");
+            }
+
+            var config = this.configRepository;
+
+            // Validation 1: Check max books per request (C)
+            var maxBooksPerRequest = reader.IsStaff 
+                ? config.MaxBooksPerRequest * 2 
+                : config.MaxBooksPerRequest;
+            
+            if (bookIds.Count > maxBooksPerRequest)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot borrow more than {maxBooksPerRequest} books at once.");
+            }
+
+            // Validation 2: Check domain diversity for 3+ books
+            if (bookIds.Count >= 3)
+            {
+                var books = new List<Book>();
+                foreach (var bookId in bookIds)
+                {
+                    var book = this.bookRepository.GetById(bookId);
+                    if (book == null)
+                    {
+                        throw new InvalidOperationException($"Book {bookId} not found.");
+                    }
+                    books.Add(book);
+                }
+
+                var distinctDomains = books
+                    .SelectMany(b => b.Domains)
+                    .Select(d => d.Id)
+                    .Distinct()
+                    .Count();
+
+                if (distinctDomains < 2)
+                {
+                    throw new InvalidOperationException(
+                        "When borrowing 3 or more books, they must be from at least 2 different domains.");
+                }
+            }
+
+            // Validation 3: Check daily limit (NCZ)
+            var maxBooksPerDay = reader.IsStaff ? int.MaxValue : config.MaxBooksPerDay;
+            var todayBorrowings = this.borrowingRepository.GetBorrowingsByDateRange(
+                DateTime.Now.Date,
+                DateTime.Now);
+
+            if (todayBorrowings.Count() + bookIds.Count > maxBooksPerDay)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot borrow more than {maxBooksPerDay} books per day.");
+            }
+
+            // Validation 4: Check period limit (NMC)
+            var periodDays = config.BorrowingPeriodDays;
+            var periodStart = DateTime.Now.AddDays(-periodDays);
+            var borrowingsInPeriod = this.borrowingRepository.GetBorrowingsByDateRange(
+                periodStart,
+                DateTime.Now);
+
+            var maxBooksInPeriod = reader.IsStaff 
+                ? config.MaxBooksPerPeriod * 2 
+                : config.MaxBooksPerPeriod;
+
+            if (borrowingsInPeriod.Count() + bookIds.Count > maxBooksInPeriod)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot borrow more than {maxBooksInPeriod} books in {periodDays} days.");
+            }
+
+            // Validation 5: Create borrowing for each book with individual validations
+            foreach (var bookId in bookIds)
+            {
+                if (!this.CanBorrowBook(readerId, bookId))
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot borrow book {bookId}. Business rules violated.");
+                }
+
+                this.BorrowBook(readerId, bookId, borrowingDays);
+            }
+        }
+
+        /// <summary>
+        /// Extends a borrowing period with comprehensive validation.
+        /// Validates: extension limit within last 3 months, book availability, and minimum percentage.
+        /// </summary>
+        public void ExtendBorrowingAdvanced(int borrowingId, int extensionDays)
+        {
+            var borrowing = this.borrowingRepository.GetById(borrowingId);
+            if (borrowing == null)
+            {
+                throw new InvalidOperationException("Borrowing record not found.");
+            }
+
+            if (!borrowing.IsActive)
+            {
+                throw new InvalidOperationException("Cannot extend a returned borrowing record.");
+            }
+
+            var reader = this.readerRepository.GetById(borrowing.ReaderId);
+            if (reader == null)
+            {
+                throw new InvalidOperationException("Reader not found.");
+            }
+
+            var config = this.configRepository;
+            var maxExtensionDays = config.MaxExtensionDays;
+
+            // Validation 1: Check total extension limit
+            if (borrowing.TotalExtensionDays + extensionDays > maxExtensionDays)
+            {
+                throw new InvalidOperationException(
+                    $"Extension would exceed limit of {maxExtensionDays} days.");
+            }
+
+            // Validation 2: Verify book is still available
+            var book = this.bookRepository.GetById(borrowing.BookId);
+            if (book == null)
+            {
+                throw new InvalidOperationException("Book not found.");
+            }
+
+            if (book.GetAvailableCopies() <= 0)
+            {
+                throw new InvalidOperationException("Book is no longer available for extension.");
+            }
+
+            // Validation 3: Check minimum available percentage
+            var availablePercentage = (double)book.GetAvailableCopies() / book.TotalCopies;
+            if (availablePercentage < config.MinAvailablePercentage)
+            {
+                throw new InvalidOperationException(
+                    "Cannot extend borrowing. Book availability below minimum threshold.");
+            }
+
+            // Validation 4: Check 3-month extension limit (LIM in last 3 months)
+            var threeMonthsAgo = DateTime.Now.AddMonths(-3);
+            var borrowingsInLastThreeMonths = this.borrowingRepository.GetBorrowingsByDateRange(
+                threeMonthsAgo,
+                DateTime.Now);
+
+            var totalExtensionInPeriod = borrowingsInLastThreeMonths
+                .Where(b => b.ReaderId == borrowing.ReaderId)
+                .Sum(b => b.TotalExtensionDays);
+
+            var maxExtensionInThreeMonths = reader.IsStaff 
+                ? maxExtensionDays * 2 
+                : maxExtensionDays;
+
+            if (totalExtensionInPeriod + extensionDays > maxExtensionInThreeMonths)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot exceed {maxExtensionInThreeMonths} extension days in 3 months.");
+            }
+
+            // Perform extension
+            borrowing.DueDate = borrowing.DueDate.AddDays(extensionDays);
+            borrowing.TotalExtensionDays += extensionDays;
+            borrowing.LastExtensionDate = DateTime.Now;
         }
     }
 }

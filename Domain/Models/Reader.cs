@@ -17,27 +17,27 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the first name of the reader.
         /// </summary>
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the last name of the reader.
         /// </summary>
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the street address of the reader.
         /// </summary>
-        public string Address { get; set; }
+        public string Address { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the phone number of the reader.
         /// </summary>
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the email address of the reader.
         /// </summary>
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the registration date of the reader.
@@ -53,5 +53,10 @@ namespace Domain.Models
         /// Gets or sets the collection of borrowing records for this reader.
         /// </summary>
         public virtual ICollection<Borrowing> BorrowingRecords { get; set; } = new List<Borrowing>();
+
+        public string GetFullName()
+        {
+            return $"{this.FirstName} {this.LastName}";
+        }
     }
 }

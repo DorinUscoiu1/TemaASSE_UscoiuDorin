@@ -98,7 +98,6 @@ namespace Data.Repositories
             if (existingDomain != null)
             {
                 existingDomain.Name = domain.Name;
-                existingDomain.Description = domain.Description;
                 existingDomain.ParentDomainId = domain.ParentDomainId;
                 this.context.SaveChanges();
             }

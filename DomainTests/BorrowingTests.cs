@@ -144,5 +144,78 @@ namespace DomainTests
             Assert.AreEqual(reader.FirstName, borrowing.Reader.FirstName);
             Assert.AreEqual(book.Title, borrowing.Book.Title);
         }
+
+        /// <summary>
+        /// Test 6: Verifies GetTotalExtensionDays returns TotalExtensionDays when set.
+        /// </summary>
+        [TestMethod]
+        public void Borrowing_GetTotalExtensionDays_ReturnsTotalExtensionDaysWhenSet()
+        {
+            // Arrange
+            borrowing.TotalExtensionDays = 14;
+
+            // Act
+            int result = borrowing.GetTotalExtensionDays();
+
+            // Assert
+            Assert.AreEqual(14, result);
+        }
+
+        /// <summary>
+        /// Test 7: Verifies GetTotalExtensionDays computes from Extensions collection when TotalExtensionDays is 0.
+        /// </summary>
+        [TestMethod]
+        public void Borrowing_GetTotalExtensionDays_ComputesFromExtensionsWhenTotalIsZero()
+        {
+            // Arrange
+            borrowing.TotalExtensionDays = 0;
+            var extension1 = new LoanExtension { Id = 1, ExtensionDays = 7 };
+            var extension2 = new LoanExtension { Id = 2, ExtensionDays = 7 };
+            borrowing.Extensions.Add(extension1);
+            borrowing.Extensions.Add(extension2);
+
+            // Act
+            int result = borrowing.GetTotalExtensionDays();
+
+            // Assert
+            Assert.AreEqual(14, result);
+        }
+
+        /// <summary>
+        /// Test 8: Verifies GetTotalExtensionDays returns 0 when no extensions exist.
+        /// </summary>
+        [TestMethod]
+        public void Borrowing_GetTotalExtensionDays_ReturnsZeroWhenNoExtensions()
+        {
+            // Arrange
+            borrowing.TotalExtensionDays = 0;
+
+            // Act
+            int result = borrowing.GetTotalExtensionDays();
+
+            // Assert
+            Assert.AreEqual(0, result);
+        }
+
+        /// <summary>
+        /// Test 9: Verifies default borrowing initialization.
+        /// </summary>
+        [TestMethod]
+        public void Borrowing_DefaultInitialization_HasCorrectDefaults()
+        {
+            // Arrange & Act
+            var newBorrowing = new Borrowing();
+
+            // Assert
+            Assert.AreEqual(0, newBorrowing.Id);
+            Assert.AreEqual(0, newBorrowing.ReaderId);
+            Assert.AreEqual(0, newBorrowing.BookId);
+            Assert.IsTrue(newBorrowing.IsActive);
+            Assert.IsNull(newBorrowing.Reader);
+            Assert.IsNull(newBorrowing.Book);
+            Assert.IsNull(newBorrowing.ReturnDate);
+            Assert.IsNotNull(newBorrowing.Extensions);
+            Assert.AreEqual(0, newBorrowing.TotalExtensionDays);
+        }
     }
 }

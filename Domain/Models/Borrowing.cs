@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Domain.Models
 {
@@ -21,7 +23,8 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the reader who borrowed the book.
         /// </summary>
-        public virtual Reader Reader { get; set; }
+        public Reader Reader { get; set; } = null;
+
         /// <summary>
         /// Gets or sets the ID of the book (for quick reference and filtering).
         /// </summary>
@@ -30,7 +33,7 @@ namespace Domain.Models
         /// <summary>
         /// Gets or sets the book (for quick reference and filtering).
         /// </summary>
-        public virtual Book Book { get; set; }
+        public Book Book { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the date and time when the book was borrowed.
@@ -48,23 +51,44 @@ namespace Domain.Models
         public DateTime? ReturnDate { get; set; }
 
         /// <summary>
-        /// Gets or sets the total number of days extended (sum of all extensions in the last 3 months).
+        /// Gets or sets the extensions granted for this loan.
+        /// </summary>
+        public ICollection<LoanExtension> Extensions { get; set; } = new List<LoanExtension>();
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this borrowing record is currently active.
+        /// Use as property to support assignment and boolean checks across the codebase/tests.
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// Total extension days (tracked explicitly by services/tests).
         /// </summary>
         public int TotalExtensionDays { get; set; }
 
         /// <summary>
-        /// Gets or sets the date of the last extension (for tracking extension limits).
+        /// Date of the last extension, if any.
         /// </summary>
         public DateTime? LastExtensionDate { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether this borrowing record is currently active.
-        /// </summary>
-        public bool IsActive { get; set; }
-
-        /// <summary>
-        /// Gets or sets the initial number of borrowing days.
+        /// The initial number of borrowing days when the record was created.
         /// </summary>
         public int InitialBorrowingDays { get; set; }
+
+        /// <summary>
+        /// Gets the total extension days granted.
+        /// If TotalExtensionDays was set explicitly, return it; otherwise compute from Extensions.
+        /// </summary>
+        /// <returns>Total extension days.</returns>
+        public int GetTotalExtensionDays()
+        {
+            if (this.TotalExtensionDays > 0)
+            {
+                return this.TotalExtensionDays;
+            }
+
+            return this.Extensions?.Sum(e => e.ExtensionDays) ?? 0;
+        }
     }
 }
